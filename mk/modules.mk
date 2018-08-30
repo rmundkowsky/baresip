@@ -465,3 +465,4 @@ endif
 ifneq ($(USE_RTCPSUMMARY),)
 MODULES   += rtcpsummary
 endif
+MODULES   += snapshot
