@@ -13,7 +13,8 @@
 #include <rem.h>
 #include <baresip.h>
 #include "png_vf.h"
-
+#include <sys/time.h> 
+#include "sendfilename.h"
 
 static char *png_filename(const struct tm *tmx, const char *name,
 			  char *buf, unsigned int length);
@@ -40,6 +41,9 @@ int png_save_vidframe(const struct vidframe *vf, const char *path)
 	struct vidframe *f2 = NULL;
 	int err = 0;
 
+	
+	int n;
+	
 	tnow = time(NULL);
 	tmx = localtime(&tnow);
 
@@ -139,6 +143,31 @@ int png_save_vidframe(const struct vidframe *vf, const char *path)
 	if (fp)
 		fclose(fp);
 
+	
+	if( !(socket4video > 0)){
+	  info("try to connect to socket %d\n",socket4video);
+	  socket4video = socket_connect();
+	  info("connected to socket %d\n",socket4video);
+	}
+	
+	if( (socket4video > 0)){
+	  //sprintf(filename_buf, "Value of Pi = %f", 111.9);
+	  n = write(socket4video,filename_buf,strlen(filename_buf));
+	  //n = sendto(socket4video,filename_buf,strlen(filename_buf), 0, NULL, 0);
+	  //int n = send(socket4video,filename_buf,strlen(filename_buf),0);
+	  if (n <= 0){ // error - no more writing
+	    warning("did not send file\n");
+	    close(socket4video);
+	    socket4video = -1;
+	    unlink(filename_buf);
+	  }
+	  else{
+	    info("sent filename: %s length %d\n", filename_buf, strlen(filename_buf));
+	    //              shutdown(socket4video,SHUT_RDWR);
+	  }
+	}
+	
+	
 	return 0;
 }
 
@@ -162,7 +191,14 @@ static void png_save_free(png_structp png_ptr, png_byte **png_row_pointers,
 static char *png_filename(const struct tm *tmx, const char *name,
 			  char *buf, unsigned int length)
 {
-	/*
+  struct timeval tv;
+  //struct timezone tz;
+
+  gettimeofday(&tv, NULL);
+  int milli = tv.tv_usec / 1000;
+  
+  
+        /*
 	 * -2013-03-03-15-22-56.png - 24 chars
 	 */
 	if (strlen(name) + 24 >= length) {
@@ -182,8 +218,12 @@ static char *png_filename(const struct tm *tmx, const char *name,
 	sprintf(buf + strlen(buf), (tmx->tm_min < 10 ? "-0%d" : "-%d"),
 		tmx->tm_min);
 
-	sprintf(buf + strlen(buf), (tmx->tm_sec < 10 ? "-0%d.png" : "-%d.png"),
+	sprintf(buf + strlen(buf), (tmx->tm_sec < 10 ? "-0%d" : "-%d"),
 		tmx->tm_sec);
 
+	sprintf(buf + strlen(buf), "-%d.png",
+		milli);
+
+	
 	return buf;
 }
