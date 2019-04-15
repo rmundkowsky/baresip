@@ -206,7 +206,7 @@ static char *png_filename(const struct tm *tmx, const char *name,
 		return buf;
 	}
 
-	sprintf(buf, (tmx->tm_mon < 9 ? "%s-%d-0%d" : "%s-%d-%d"), name,
+	sprintf(buf, (tmx->tm_mon < 9 ? "%s:%d-0%d" : "%s:%d-%d"), name,
 		1900 + tmx->tm_year, tmx->tm_mon + 1);
 
 	sprintf(buf + strlen(buf), (tmx->tm_mday < 10 ? "-0%d" : "-%d"),
